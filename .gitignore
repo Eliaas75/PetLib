@@ -1,12 +1,38 @@
+<<<<<<< HEAD
+# Dependencies
 **/node_modules/
+
+# Builds
 **/dist/
 **/build/
+
+# Env (never commit)
 **/.env
 **/.env.*
+.env
+
+# Logs
 **/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Coverage
 **/coverage/
+
+# TypeScript cache
 **/*.tsbuildinfo
+
+# IDE
 **/.vscode/
 **/.idea/
+
+# OS
 .DS_Store
 Thumbs.db
+=======
+echo "node_modules/" >> .gitignore
+echo ".env" >> .gitignore
+echo "dist/" >> .gitignore
+>>>>>>> 0a4a6d327c44c662f15fa065b8dce940f1dfdde1
