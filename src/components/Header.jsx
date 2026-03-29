@@ -10,8 +10,8 @@ export default function Header() {
   return (
     <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-border">
       <div className="h-[72px] max-w-[1440px] mx-auto px-6 lg:px-20 flex items-center gap-6">
-        <Link to="/" className="text-xl font-semibold text-brand">
-          Petlib
+        <Link to="/" className="flex items-center shrink-0">
+          <img src="/petlib_logo_v2.jpg" alt="Logo PetLib" className="h-16 w-auto object-contain" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-4 text-sm text-muted">
