@@ -1,4 +1,4 @@
-PetLib 🐾
+PetLib 
 
 PetLib est un **prototype full-stack** (monorepo) d’application de **recherche & prise de rendez-vous** pour services vétérinaires (vétérinaires, NAC, ferme, etc.).  
 Objectif : une expérience **health-tech** simple, calme et pro : rechercher, filtrer, puis réserver (MVP en cours).
@@ -72,7 +72,7 @@ CLIENT_ORIGIN=http://localhost:5173
 
 CLIENT_ORIGIN doit matcher l’URL du front (Vite), sinon les cookies ne passeront pas (CORS + credentials).
 
-▶️ Lancer le backend
+Lancer le backend
 cd server
 npm install
 npm run dev
