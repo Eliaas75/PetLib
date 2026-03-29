@@ -79,7 +79,7 @@ npm run dev
 
 Le serveur démarre par défaut sur http://localhost:4000.
 
-▶️ Lancer le frontend
+Lancer le frontend
 cd client
 npm install
 npm run dev
