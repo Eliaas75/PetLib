@@ -1,6 +1,6 @@
 PetLib 
 
-PetLib est un **prototype full-stack** (monorepo) d’application de **recherche & prise de rendez-vous** pour services vétérinaires (vétérinaires, NAC, ferme, etc.).  
+PetLib est un **prototype full-stack d’application de **recherche & prise de rendez-vous** pour services vétérinaires (vétérinaires, NAC, ferme, etc.).  
 Objectif : une expérience **health-tech** simple, calme et pro : rechercher, filtrer, puis réserver (MVP en cours).
 
 Fonctionnalités (actuel)
