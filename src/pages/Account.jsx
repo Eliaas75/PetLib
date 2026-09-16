@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Card from "../components/Card.jsx";
 import Input from "../components/Input.jsx";
 import Select from "../components/Select.jsx";
@@ -33,26 +34,41 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function remainingLabel(expiresAt, now) {
+  const seconds = Math.max(0, Math.floor((new Date(expiresAt).getTime() - now.getTime()) / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return `${minutes}:${String(rest).padStart(2, "0")}`;
+}
+
 export default function Account() {
   const { user } = useAuth();
+  const [params] = useSearchParams();
   const [pets, setPets] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [waitlistRequests, setWaitlistRequests] = useState([]);
+  const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savingPet, setSavingPet] = useState(false);
-  const [cancellingId, setCancellingId] = useState("");
+  const [actionId, setActionId] = useState("");
+  const [now, setNow] = useState(new Date());
   const [form, setForm] = useState({ name: "", species: "dog", breed: "", sex: "unknown" });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [petData, appointmentData] = await Promise.all([
+      const [petData, appointmentData, waitlistData, offerData] = await Promise.all([
         api("/api/pets"),
         api("/api/appointments?limit=100"),
+        api("/api/waitlist"),
+        api("/api/waitlist/offers/active"),
       ]);
       setPets(petData.pets || []);
       setAppointments(appointmentData.appointments || []);
+      setWaitlistRequests(waitlistData.requests || []);
+      setOffers(offerData.offers || []);
     } catch (err) {
       setError(err.message || "Impossible de charger ton espace");
     } finally {
@@ -63,6 +79,12 @@ export default function Account() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!offers.length) return undefined;
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, [offers.length]);
 
   async function addPet(event) {
     event.preventDefault();
@@ -90,7 +112,7 @@ export default function Account() {
   }
 
   async function cancelAppointment(id) {
-    setCancellingId(id);
+    setActionId(id);
     setError("");
     try {
       await api(`/api/appointments/${id}/cancel`, {
@@ -101,7 +123,33 @@ export default function Account() {
     } catch (err) {
       setError(err.message || "Impossible d'annuler le rendez-vous");
     } finally {
-      setCancellingId("");
+      setActionId("");
+    }
+  }
+
+  async function cancelWaitlist(id) {
+    setActionId(id);
+    setError("");
+    try {
+      await api(`/api/waitlist/${id}/cancel`, { method: "POST", body: "{}" });
+      await load();
+    } catch (err) {
+      setError(err.message || "Impossible d'annuler l'alerte");
+    } finally {
+      setActionId("");
+    }
+  }
+
+  async function respondToOffer(id, action) {
+    setActionId(id);
+    setError("");
+    try {
+      await api(`/api/waitlist/offers/${id}/${action}`, { method: "POST", body: "{}" });
+      await load();
+    } catch (err) {
+      setError(err.message || "Impossible de traiter cette offre");
+    } finally {
+      setActionId("");
     }
   }
 
@@ -109,18 +157,71 @@ export default function Account() {
     (appointment) => ["pending", "confirmed"].includes(appointment.status) && new Date(appointment.startsAt) > new Date()
   );
   const history = appointments.filter((appointment) => !upcoming.some((item) => item._id === appointment._id));
+  const activeWaitlists = waitlistRequests.filter((request) => ["active", "offered"].includes(request.status));
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 lg:px-20 py-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Mon espace</h1>
-        <div className="text-sm text-muted mt-1">{user?.fullName || user?.email}</div>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold">Mon espace</h1>
+          <div className="text-sm text-muted mt-1">{user?.fullName || user?.email}</div>
+        </div>
+        <Link to="/waitlist/new"><Button variant="secondary">🔔 Nouvelle Smart Waitlist</Button></Link>
       </div>
+
+      {params.get("waitlist") === "created" ? (
+        <Card className="mt-5 p-4 border-green-200">
+          <div className="font-semibold">Smart Waitlist activée ✓</div>
+          <div className="text-sm text-muted mt-1">PetLib surveille maintenant les créneaux compatibles.</div>
+        </Card>
+      ) : null}
 
       {error ? (
         <Card className="mt-5 p-4 border-red-200">
           <div className="text-sm text-red-600">{error}</div>
         </Card>
+      ) : null}
+
+      {offers.length > 0 ? (
+        <div className="mt-6 space-y-3">
+          {offers.map((offer) => {
+            const slot = offer.slotId;
+            const pet = pets.find((item) => String(item._id) === String(offer.requestId?.petId));
+            return (
+              <Card key={offer._id} className="p-5 ring-2 ring-brand/25">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <div className="text-lg font-semibold">🔔 Un créneau vient de se libérer</div>
+                    <div className="text-sm mt-1">
+                      {slot?.clinicId?.name} • {slot?.practitionerId?.displayName}
+                    </div>
+                    <div className="text-sm text-muted mt-1">
+                      {slot?.startsAt ? formatDate(slot.startsAt) : ""}{pet ? ` • ${pet.name}` : ""}
+                    </div>
+                    <div className="text-sm font-semibold mt-2">
+                      Réservé pour toi encore {remainingLabel(offer.expiresAt, now)}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      disabled={actionId === offer._id}
+                      onClick={() => respondToOffer(offer._id, "decline")}
+                    >
+                      Passer
+                    </Button>
+                    <Button
+                      disabled={actionId === offer._id || new Date(offer.expiresAt) <= now}
+                      onClick={() => respondToOffer(offer._id, "accept")}
+                    >
+                      Confirmer le RDV
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       ) : null}
 
       <div className="mt-6 grid grid-cols-12 gap-6">
@@ -189,6 +290,39 @@ export default function Account() {
               ))}
             </div>
           </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-lg font-semibold">Smart Waitlist</div>
+              <div className="text-sm text-muted">{activeWaitlists.length} active{activeWaitlists.length > 1 ? "s" : ""}</div>
+            </div>
+            {activeWaitlists.length === 0 ? (
+              <div className="mt-4 text-sm text-muted">Aucune surveillance active.</div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {activeWaitlists.map((request) => (
+                  <div key={request._id} className="rounded-xl border border-border p-4">
+                    <div className="font-semibold">{request.petId?.name || "Animal"} • {request.reason}</div>
+                    <div className="text-sm text-muted mt-1">
+                      {[request.city, request.postalCode].filter(Boolean).join(" ") || "Professionnel sélectionné"}
+                      {request.consultationTypes?.length ? ` • ${request.consultationTypes.join(", ")}` : ""}
+                    </div>
+                    <div className="text-xs text-muted mt-2">Surveillance jusqu'au {formatDate(request.expiresAt)}</div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <Tag>{request.status === "offered" ? "Créneau proposé" : "Surveillance active"}</Tag>
+                      <Button
+                        variant="secondary"
+                        disabled={actionId === request._id}
+                        onClick={() => cancelWaitlist(request._id)}
+                      >
+                        Désactiver
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
 
         <div className="col-span-12 lg:col-span-7 space-y-6">
@@ -212,13 +346,13 @@ export default function Account() {
                     {appointment.petId?.name} • {appointment.practitionerId?.displayName} • {appointment.reason}
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <Tag>{appointment.status === "confirmed" ? "Confirmé" : appointment.status}</Tag>
+                    <Tag>{appointment.source === "waitlist" ? "Smart Waitlist" : appointment.status === "confirmed" ? "Confirmé" : appointment.status}</Tag>
                     <Button
                       variant="secondary"
-                      disabled={cancellingId === appointment._id}
+                      disabled={actionId === appointment._id}
                       onClick={() => cancelAppointment(appointment._id)}
                     >
-                      {cancellingId === appointment._id ? "Annulation…" : "Annuler"}
+                      {actionId === appointment._id ? "Annulation…" : "Annuler"}
                     </Button>
                   </div>
                 </div>
