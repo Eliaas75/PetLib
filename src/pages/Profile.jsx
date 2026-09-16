@@ -143,6 +143,16 @@ export default function Profile() {
     }
   }, [compatibleSlots, selectedSlotId]);
 
+  const waitlistQuery = useMemo(() => {
+    const query = new URLSearchParams({ reason });
+    if (consultationType) query.set("type", consultationType);
+    if (selectedPet?.species) query.set("species", selectedPet.species);
+    if (clinic?.address?.city) query.set("city", clinic.address.city);
+    if (clinic?._id) query.set("clinicId", clinic._id);
+    if (practitioner?._id) query.set("practitionerId", practitioner._id);
+    return query.toString();
+  }, [reason, consultationType, selectedPet, clinic, practitioner]);
+
   async function bookAppointment() {
     if (!user) {
       nav("/login", { state: { from: `/p/${id}?book=1` } });
@@ -333,7 +343,14 @@ export default function Profile() {
                 <div className="mb-2 text-xs text-muted">Créneaux compatibles</div>
                 {slotsByDay.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-border p-3 text-sm text-muted">
-                    Aucun créneau compatible dans les 7 prochains jours. La Smart Waitlist permettra bientôt d'être alerté d'un désistement.
+                    <div>Aucun créneau compatible dans les 7 prochains jours.</div>
+                    {reason === "urgent" ? (
+                      <div className="mt-2">Pour une urgence nécessitant une prise en charge immédiate, contacte directement un service vétérinaire d'urgence ou de garde.</div>
+                    ) : (
+                      <Link to={`/waitlist/new?${waitlistQuery}`}>
+                        <Button className="mt-3 w-full" variant="secondary">🔔 Surveiller les désistements</Button>
+                      </Link>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-[360px] overflow-auto pr-1">
