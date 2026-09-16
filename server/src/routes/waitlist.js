@@ -219,6 +219,7 @@ router.post("/offers/:id/accept", async (req, res) => {
   const appointmentId = new mongoose.Types.ObjectId();
   let claimedSlot = null;
   let offer = null;
+  let appointmentCreated = false;
 
   try {
     await expireDueOffers();
@@ -276,26 +277,33 @@ router.post("/offers/:id/accept", async (req, res) => {
       status: "confirmed",
       source: "waitlist",
     });
+    appointmentCreated = true;
 
-    await WaitlistOffer.updateOne(
-      { _id: offer._id, status: "offered" },
-      { $set: { status: "accepted", acceptedAppointmentId: appointmentId } }
-    );
-    await WaitlistRequest.updateOne(
-      { _id: request._id, activeOfferId: offer._id },
-      {
-        $set: {
-          status: "booked",
-          activeOfferId: null,
-          bookedAppointmentId: appointmentId,
-        },
-      }
-    );
+    const metadataResults = await Promise.allSettled([
+      WaitlistOffer.updateOne(
+        { _id: offer._id, status: "offered" },
+        { $set: { status: "accepted", acceptedAppointmentId: appointmentId } }
+      ),
+      WaitlistRequest.updateOne(
+        { _id: request._id, activeOfferId: offer._id },
+        {
+          $set: {
+            status: "booked",
+            activeOfferId: null,
+            bookedAppointmentId: appointmentId,
+          },
+        }
+      ),
+    ]);
+
+    metadataResults.forEach((result) => {
+      if (result.status === "rejected") console.error("waitlist_accept_metadata_error", result.reason);
+    });
 
     const appointment = await populateAppointment(Appointment.findById(appointmentId)).lean();
     return res.status(201).json({ appointment });
   } catch (error) {
-    if (claimedSlot && offer && new Date(offer.expiresAt) > new Date()) {
+    if (!appointmentCreated && claimedSlot && offer && new Date(offer.expiresAt) > new Date()) {
       await AvailabilitySlot.findOneAndUpdate(
         { _id: claimedSlot._id, appointmentId },
         {
@@ -307,6 +315,12 @@ router.post("/offers/:id/accept", async (req, res) => {
           },
         }
       ).catch((rollbackError) => console.error("waitlist_accept_rollback_error", rollbackError));
+    }
+
+    if (appointmentCreated) {
+      console.error("waitlist_accept_post_booking_error", error);
+      const appointment = await populateAppointment(Appointment.findById(appointmentId)).lean().catch(() => null);
+      if (appointment) return res.status(201).json({ appointment, warning: "Rendez-vous créé, synchronisation de l'alerte à vérifier" });
     }
 
     console.error("waitlist_accept_error", error);
