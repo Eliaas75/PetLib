@@ -7,12 +7,17 @@ import Button from "../components/Button.jsx";
 import homeIllustration from "../images/Card_home.png";
 
 const speciesOptions = [
-  { value: "all", label: "Chien / Chat / NAC / Ferme…" },
+  { value: "all", label: "Tous les animaux" },
   { value: "dog", label: "Chien" },
   { value: "cat", label: "Chat" },
-  { value: "nac", label: "NAC (reptiles, oiseaux, rongeurs…)" },
-  { value: "ferme", label: "Animaux de ferme" },
-  { value: "equide", label: "Équidés" },
+  { value: "rabbit", label: "Lapin" },
+  { value: "bird", label: "Oiseau" },
+  { value: "reptile", label: "Reptile" },
+  { value: "rodent", label: "Rongeur" },
+  { value: "ferret", label: "Furet" },
+  { value: "nac", label: "Tous les NAC" },
+  { value: "equine", label: "Équidé" },
+  { value: "farm", label: "Animal de ferme" },
 ];
 
 const reasonOptions = [
@@ -30,7 +35,7 @@ export default function Home() {
   const [city, setCity] = useState("Paris");
 
   const go = () => {
-    const q = new URLSearchParams({ species, reason, city });
+    const q = new URLSearchParams({ species, reason, city: city.trim() || "Paris" });
     nav(`/search?${q.toString()}`);
   };
 
@@ -39,16 +44,16 @@ export default function Home() {
       <div className="grid grid-cols-12 gap-6 items-start">
         <div className="col-span-12 lg:col-span-6">
           <h1 className="text-4xl lg:text-5xl font-semibold leading-tight">
-            Des rendez-vous pour tous vos animaux.
+            Trouve le bon vétérinaire et le bon créneau pour ton animal.
           </h1>
           <p className="mt-4 text-muted text-base lg:text-lg">
-            Chiens, chats, lapins, NAC (reptiles, oiseaux…), animaux de ferme et équidés.
+            Chiens, chats, lapins, oiseaux, reptiles, rongeurs, furets, animaux de ferme et équidés.
           </p>
 
           <Card className="mt-8 p-6">
             <div className="text-sm font-semibold mb-4">Rechercher un rendez-vous</div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <Select label="Espèce" value={species} onChange={(e) => setSpecies(e.target.value)}>
+              <Select label="Animal" value={species} onChange={(e) => setSpecies(e.target.value)}>
                 {speciesOptions.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -77,16 +82,16 @@ export default function Home() {
             <div className="text-lg font-semibold">Accès rapide</div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { t: "Urgence 24/7", q: "urgent=1" },
+                { t: "Urgence", q: "urgent=1&reason=urgent" },
                 { t: "Téléconsultation", q: "type=tele" },
                 { t: "Visite à domicile", q: "type=home" },
                 { t: "NAC & reptiles", q: "species=nac" },
-                { t: "Animaux de ferme", q: "species=ferme" },
-                { t: "Dentisterie & imagerie", q: "reason=imaging" },
+                { t: "Animaux de ferme", q: "species=farm&type=farm" },
+                { t: "Équidés", q: "species=equine&type=home" },
               ].map((c) => (
                 <button
                   key={c.t}
-                  onClick={() => nav(`/search?${c.q}&city=${encodeURIComponent(city)}`)}
+                  onClick={() => nav(`/search?${c.q}&city=${encodeURIComponent(city.trim() || "Paris")}`)}
                   className="h-20 rounded-xl2 bg-white border border-border shadow-soft px-4 text-left hover:bg-black/2 transition"
                   type="button"
                 >
@@ -102,16 +107,12 @@ export default function Home() {
           <Card className="p-8 rounded-[24px]">
             <img
               src={homeIllustration}
-              alt="Illustration Petlib"
-              className="h-[420px] rounded-[24px] bg-black/5 border border-border flex items-center justify-center text-muted block w-full h-auto"
-              />
+              alt="Illustration PetLib"
+              className="rounded-[24px] bg-black/5 border border-border block w-full h-auto"
+            />
             <div className="mt-4 text-sm text-muted">
-              <span>
-                La première plateforme qui réunit vétérinaires, NAC et animaux de ferme
-              </span>{" "}
-              <span className="font-semibold text-text">
-                suivis par des praticiens vérifiés.
-              </span>
+              PetLib réunit recherche, disponibilités et réservation pour différents types d'animaux et de consultations.
+              <span className="font-semibold text-text"> Le matching tient compte du besoin réel de l'animal.</span>
             </div>
           </Card>
         </div>

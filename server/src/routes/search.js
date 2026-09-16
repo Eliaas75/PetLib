@@ -9,8 +9,21 @@ function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function buildFlexibleArrayCondition(field, value) {
-  return { $or: [{ [field]: value }, { [field]: { $size: 0 } }] };
+function resolveSpecies(rawSpecies) {
+  if (!rawSpecies || rawSpecies === "all" || rawSpecies === "vet") return [];
+  if (rawSpecies === "nac") return ["rabbit", "bird", "reptile", "rodent", "ferret"];
+  if (rawSpecies === "ferme") return ["farm"];
+  if (rawSpecies === "equide") return ["equine"];
+  return [String(rawSpecies)];
+}
+
+function arrayMatch(values) {
+  if (values.length === 1) return values[0];
+  return { $in: values };
+}
+
+function buildFlexibleArrayCondition(field, values) {
+  return { $or: [{ [field]: arrayMatch(values) }, { [field]: { $size: 0 } }] };
 }
 
 router.get("/", async (req, res) => {
@@ -25,14 +38,19 @@ router.get("/", async (req, res) => {
       lng,
     } = req.query;
 
+    const speciesValues = resolveSpecies(species);
     const distanceKm = Math.min(Math.max(Number(req.query.distanceKm || 20), 1), 100);
     const availabilityDays = Math.min(Math.max(Number(req.query.availabilityDays || 7), 1), 31);
     const now = new Date();
     const to = new Date(now.getTime() + availabilityDays * 24 * 60 * 60 * 1000);
 
     const clinicFilter = { active: true, verified: true };
-    if (city) clinicFilter["address.city"] = new RegExp(`^${escapeRegex(city)}$`, "i");
-    if (species) clinicFilter.acceptedSpecies = species;
+    if (city) {
+      const place = String(city).trim();
+      if (/^\d{5}$/.test(place)) clinicFilter["address.postalCode"] = place;
+      else clinicFilter["address.city"] = new RegExp(`^${escapeRegex(place)}$`, "i");
+    }
+    if (speciesValues.length) clinicFilter.acceptedSpecies = arrayMatch(speciesValues);
     if (consultationType) clinicFilter.consultationTypes = consultationType;
     if (String(emergency).toLowerCase() === "true") clinicFilter.emergencyCapability = true;
 
@@ -63,7 +81,7 @@ router.get("/", async (req, res) => {
       verified: true,
       clinicIds: { $in: clinicIds },
     };
-    if (species) practitionerFilter.acceptedSpecies = species;
+    if (speciesValues.length) practitionerFilter.acceptedSpecies = arrayMatch(speciesValues);
     if (consultationType) practitionerFilter.consultationTypes = consultationType;
 
     const practitioners = await Practitioner.find(practitionerFilter)
@@ -84,8 +102,8 @@ router.get("/", async (req, res) => {
     ];
 
     if (consultationType) slotConditions.push({ consultationType });
-    if (species) slotConditions.push(buildFlexibleArrayCondition("acceptedSpecies", species));
-    if (reason) slotConditions.push(buildFlexibleArrayCondition("allowedReasons", String(reason)));
+    if (speciesValues.length) slotConditions.push(buildFlexibleArrayCondition("acceptedSpecies", speciesValues));
+    if (reason) slotConditions.push(buildFlexibleArrayCondition("allowedReasons", [String(reason)]));
 
     const slots = await AvailabilitySlot.find({ $and: slotConditions })
       .sort({ startsAt: 1 })

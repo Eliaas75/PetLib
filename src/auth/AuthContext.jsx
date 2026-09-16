@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   async function refresh() {
     const r = await api("/api/auth/me");
     setUser(r.user);
+    return r.user;
   }
 
   async function login(email, password) {
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ email, password }),
     });
     setUser(r.user);
+    return r.user;
   }
 
   async function register(payload) {
@@ -26,6 +28,7 @@ export function AuthProvider({ children }) {
       body: JSON.stringify(payload),
     });
     setUser(r.user);
+    return r.user;
   }
 
   async function logout() {
@@ -34,11 +37,26 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
+    let mounted = true;
+
+    api("/api/auth/me")
+      .then((r) => {
+        if (mounted) setUser(r.user);
+      })
+      .catch(() => {
+        if (mounted) setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
-    <AuthCtx.Provider value={{ user, loading, login, register, logout }}>
+    <AuthCtx.Provider value={{ user, loading, login, register, logout, refresh }}>
       {children}
     </AuthCtx.Provider>
   );
