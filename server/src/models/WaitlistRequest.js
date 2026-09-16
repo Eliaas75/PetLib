@@ -1,5 +1,22 @@
 import mongoose from "mongoose";
 
+const GeoPointSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ["Point"], required: true },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator(value) {
+          return Array.isArray(value) && value.length === 2;
+        },
+        message: "location.coordinates must be [longitude, latitude]",
+      },
+    },
+  },
+  { _id: false }
+);
+
 const WaitlistRequestSchema = new mongoose.Schema(
   {
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -9,17 +26,7 @@ const WaitlistRequestSchema = new mongoose.Schema(
     consultationTypes: [{ type: String, enum: ["clinic", "tele", "home", "farm"] }],
     city: { type: String, default: "", trim: true, index: true },
     postalCode: { type: String, default: "", trim: true, index: true },
-    location: {
-      type: {
-        type: String,
-        enum: ["Point"],
-        default: undefined,
-      },
-      coordinates: {
-        type: [Number],
-        default: undefined,
-      },
-    },
+    location: { type: GeoPointSchema, default: undefined },
     maxDistanceKm: { type: Number, min: 1, max: 100, default: 20 },
     preferredClinicIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
     preferredPractitionerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Practitioner" }],
