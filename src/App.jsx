@@ -5,6 +5,7 @@ import Home from "./pages/Home.jsx";
 import SearchResults from "./pages/SearchResults.jsx";
 import Profile from "./pages/Profile.jsx";
 import Account from "./pages/Account.jsx";
+import WaitlistNew from "./pages/WaitlistNew.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import PrivateRoute from "./auth/PrivateRoute.jsx";
@@ -22,6 +23,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <Account />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/waitlist/new"
+          element={
+            <PrivateRoute>
+              <WaitlistNew />
             </PrivateRoute>
           }
         />
