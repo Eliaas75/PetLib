@@ -13,6 +13,23 @@ const OpeningHoursSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const GeoPointSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ["Point"], required: true },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator(value) {
+          return Array.isArray(value) && value.length === 2;
+        },
+        message: "location.coordinates must be [longitude, latitude]",
+      },
+    },
+  },
+  { _id: false }
+);
+
 const ClinicSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, index: true },
@@ -25,19 +42,7 @@ const ClinicSchema = new mongoose.Schema(
       city: { type: String, default: "", trim: true, index: true },
       country: { type: String, default: "France", trim: true },
     },
-    location: {
-      type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: {
-        type: [Number],
-        default: undefined,
-        validate: {
-          validator(value) {
-            return value === undefined || (Array.isArray(value) && value.length === 2);
-          },
-          message: "location.coordinates must be [longitude, latitude]",
-        },
-      },
-    },
+    location: { type: GeoPointSchema, default: undefined },
     phone: { type: String, default: "", trim: true },
     email: { type: String, default: "", trim: true, lowercase: true },
     website: { type: String, default: "", trim: true },
