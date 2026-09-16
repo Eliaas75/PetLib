@@ -5,6 +5,10 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./db.js";
 import authRoutes from "./routes/auth.js";
 import petRoutes from "./routes/pets.js";
+import clinicRoutes from "./routes/clinics.js";
+import practitionerRoutes from "./routes/practitioners.js";
+import availabilityRoutes from "./routes/availability.js";
+import searchRoutes from "./routes/search.js";
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -32,6 +36,10 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/pets", petRoutes);
+app.use("/api/clinics", clinicRoutes);
+app.use("/api/practitioners", practitionerRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/search", searchRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Route introuvable" });
