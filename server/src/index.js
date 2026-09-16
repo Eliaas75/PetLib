@@ -10,6 +10,8 @@ import practitionerRoutes from "./routes/practitioners.js";
 import availabilityRoutes from "./routes/availability.js";
 import searchRoutes from "./routes/search.js";
 import appointmentRoutes from "./routes/appointments.js";
+import waitlistRoutes from "./routes/waitlist.js";
+import { startWaitlistSweeper } from "./services/waitlist.js";
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -42,6 +44,7 @@ app.use("/api/practitioners", practitionerRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/waitlist", waitlistRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Route introuvable" });
@@ -53,4 +56,5 @@ app.use((err, _req, res, _next) => {
 });
 
 await connectDB(process.env.MONGO_URI);
+startWaitlistSweeper();
 app.listen(port, () => console.log(`PetLib API listening on port ${port}`));

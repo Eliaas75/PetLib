@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Card from "../components/Card.jsx";
 import Chip from "../components/Chip.jsx";
 import Select from "../components/Select.jsx";
@@ -82,6 +82,11 @@ export default function SearchResults() {
     return list;
   }, [results, sort]);
 
+  const hasAvailableSlots = sortedResults.some((result) => (result.nextSlots || []).length > 0);
+  const waitlistQuery = new URLSearchParams({ city, species, reason });
+  if (consultationType) waitlistQuery.set("type", consultationType);
+  const waitlistUrl = `/waitlist/new?${waitlistQuery.toString()}`;
+
   const resetFilters = () => {
     setAvailabilityDays("7");
     setConsultationType("clinic");
@@ -119,7 +124,7 @@ export default function SearchResults() {
             </div>
 
             <div className="mt-5 text-xs text-muted">
-              Les résultats sont maintenant chargés depuis l'API PetLib et les filtres s'appliquent automatiquement.
+              Les résultats et créneaux viennent directement de l'API PetLib.
             </div>
 
             <Button className="w-full mt-5" variant="secondary" onClick={resetFilters}>
@@ -135,7 +140,7 @@ export default function SearchResults() {
                 {speciesLabels[species] || species} — {city}
               </div>
               <div className="text-sm text-muted mt-1">
-                {loading ? "Recherche des disponibilités…" : `${sortedResults.length} résultat${sortedResults.length > 1 ? "s" : ""}`}
+                {loading ? "Recherche des disponibilités…" : `${sortedResults.length} praticien${sortedResults.length > 1 ? "s" : ""}`}
               </div>
             </div>
 
@@ -159,12 +164,26 @@ export default function SearchResults() {
             <Card className="mt-4 p-6 text-sm text-muted">Chargement des praticiens et créneaux…</Card>
           ) : null}
 
-          {!error && !loading && sortedResults.length === 0 ? (
+          {!error && !loading && !hasAvailableSlots ? (
             <Card className="mt-4 p-6">
-              <div className="font-semibold">Aucun résultat correspondant</div>
-              <div className="text-sm text-muted mt-1">
-                Essaie une période plus large ou un autre type de consultation. La Smart Waitlist permettra bientôt d'être prévenu automatiquement lorsqu'un créneau se libère.
-              </div>
+              {urgent ? (
+                <>
+                  <div className="font-semibold">Aucun créneau d'urgence affiché actuellement</div>
+                  <div className="text-sm text-muted mt-1">
+                    Si l'état de ton animal nécessite une prise en charge immédiate, contacte directement un établissement vétérinaire d'urgence ou de garde plutôt que d'attendre une alerte.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="font-semibold">Aucun créneau compatible actuellement</div>
+                  <div className="text-sm text-muted mt-1">
+                    Active la Smart Waitlist : lorsqu'un désistement compatible apparaît, PetLib bloque temporairement le créneau pour te laisser le temps de confirmer.
+                  </div>
+                  <Link to={waitlistUrl}>
+                    <Button className="mt-4">🔔 Activer la Smart Waitlist</Button>
+                  </Link>
+                </>
+              )}
             </Card>
           ) : null}
 

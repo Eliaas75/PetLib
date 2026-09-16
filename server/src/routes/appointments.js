@@ -4,6 +4,7 @@ import { Appointment } from "../models/Appointment.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { Pet } from "../models/Pet.js";
 import { requireAuth } from "../middleware/auth.js";
+import { offerSlotToWaitlist } from "../services/waitlist.js";
 
 const router = express.Router();
 
@@ -67,6 +68,7 @@ router.post("/", async (req, res) => {
 
   const appointmentId = new mongoose.Types.ObjectId();
   let claimedSlot = null;
+  let appointmentCreated = false;
 
   try {
     const pet = await Pet.findOne({ _id: petId, ownerId: req.auth.userId }).lean();
@@ -86,13 +88,14 @@ router.post("/", async (req, res) => {
           status: "booked",
           appointmentId,
           holdExpiresAt: null,
+          waitlistOfferId: null,
         },
       },
       { new: true }
     );
 
     if (!claimedSlot) {
-      return res.status(409).json({ error: "Ce créneau vient d'être réservé" });
+      return res.status(409).json({ error: "Ce créneau vient d'être réservé ou est temporairement réservé à une liste d'attente" });
     }
 
     await Appointment.create({
@@ -110,15 +113,29 @@ router.post("/", async (req, res) => {
       source: "direct",
       ownerNotes: ownerNotes ? String(ownerNotes).trim() : "",
     });
+    appointmentCreated = true;
 
     const appointment = await populateAppointment(Appointment.findById(appointmentId)).lean();
     return res.status(201).json({ appointment });
   } catch (error) {
-    if (claimedSlot) {
+    if (!appointmentCreated && claimedSlot) {
       await AvailabilitySlot.findOneAndUpdate(
         { _id: claimedSlot._id, appointmentId },
-        { $set: { status: "available", appointmentId: null, holdExpiresAt: null } }
+        {
+          $set: {
+            status: "available",
+            appointmentId: null,
+            holdExpiresAt: null,
+            waitlistOfferId: null,
+          },
+        }
       ).catch((rollbackError) => console.error("booking_rollback_error", rollbackError));
+    }
+
+    if (appointmentCreated) {
+      console.error("appointment_post_booking_error", error);
+      const appointment = await populateAppointment(Appointment.findById(appointmentId)).lean().catch(() => null);
+      if (appointment) return res.status(201).json({ appointment, warning: "Rendez-vous créé, réponse enrichie indisponible" });
     }
 
     console.error("appointment_create_error", error);
@@ -167,8 +184,9 @@ router.post("/:id/cancel", async (req, res) => {
       return res.status(404).json({ error: "Rendez-vous actif introuvable" });
     }
 
+    let releasedSlot = null;
     if (appointment.startsAt > new Date()) {
-      await AvailabilitySlot.findOneAndUpdate(
+      releasedSlot = await AvailabilitySlot.findOneAndUpdate(
         {
           _id: appointment.slotId,
           appointmentId: appointment._id,
@@ -179,8 +197,16 @@ router.post("/:id/cancel", async (req, res) => {
             status: "available",
             appointmentId: null,
             holdExpiresAt: null,
+            waitlistOfferId: null,
           },
-        }
+        },
+        { new: true }
+      );
+    }
+
+    if (releasedSlot) {
+      offerSlotToWaitlist(releasedSlot._id).catch((matchError) =>
+        console.error("waitlist_match_after_cancellation_error", matchError)
       );
     }
 

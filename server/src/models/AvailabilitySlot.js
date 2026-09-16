@@ -19,6 +19,7 @@ const AvailabilitySlotSchema = new mongoose.Schema(
       index: true,
     },
     holdExpiresAt: { type: Date, default: null, index: true },
+    waitlistOfferId: { type: mongoose.Schema.Types.ObjectId, ref: "WaitlistOffer", default: null, index: true },
     appointmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Appointment", default: null },
   },
   { timestamps: true }
