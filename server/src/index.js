@@ -9,6 +9,7 @@ import clinicRoutes from "./routes/clinics.js";
 import practitionerRoutes from "./routes/practitioners.js";
 import availabilityRoutes from "./routes/availability.js";
 import searchRoutes from "./routes/search.js";
+import appointmentRoutes from "./routes/appointments.js";
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -40,6 +41,7 @@ app.use("/api/clinics", clinicRoutes);
 app.use("/api/practitioners", practitionerRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Route introuvable" });
