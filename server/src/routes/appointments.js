@@ -68,6 +68,7 @@ router.post("/", async (req, res) => {
 
   const appointmentId = new mongoose.Types.ObjectId();
   let claimedSlot = null;
+  let appointmentCreated = false;
 
   try {
     const pet = await Pet.findOne({ _id: petId, ownerId: req.auth.userId }).lean();
@@ -112,11 +113,12 @@ router.post("/", async (req, res) => {
       source: "direct",
       ownerNotes: ownerNotes ? String(ownerNotes).trim() : "",
     });
+    appointmentCreated = true;
 
     const appointment = await populateAppointment(Appointment.findById(appointmentId)).lean();
     return res.status(201).json({ appointment });
   } catch (error) {
-    if (claimedSlot) {
+    if (!appointmentCreated && claimedSlot) {
       await AvailabilitySlot.findOneAndUpdate(
         { _id: claimedSlot._id, appointmentId },
         {
@@ -128,6 +130,12 @@ router.post("/", async (req, res) => {
           },
         }
       ).catch((rollbackError) => console.error("booking_rollback_error", rollbackError));
+    }
+
+    if (appointmentCreated) {
+      console.error("appointment_post_booking_error", error);
+      const appointment = await populateAppointment(Appointment.findById(appointmentId)).lean().catch(() => null);
+      if (appointment) return res.status(201).json({ appointment, warning: "Rendez-vous créé, réponse enrichie indisponible" });
     }
 
     console.error("appointment_create_error", error);
