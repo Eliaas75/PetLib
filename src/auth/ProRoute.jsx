@@ -28,6 +28,7 @@ export default function ProRoute({ children }) {
           <Link to="/pro/agenda" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Ouvrir l’agenda</Link>
           <Link to="/pro/disponibilites" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Gérer les disponibilités</Link>
           <Link to="/pro/profil" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Modifier le profil</Link>
+          <Link to="/pro/statistiques" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Voir les statistiques</Link>
         </div>
       ) : null}
       {children}

@@ -13,6 +13,7 @@ import appointmentRoutes from "./routes/appointments.js";
 import waitlistRoutes from "./routes/waitlist.js";
 import proAvailabilityRoutes from "./routes/proAvailability.js";
 import proSettingsRoutes from "./routes/proSettings.js";
+import proStatsRoutes from "./routes/proStats.js";
 import proRoutes from "./routes/pro.js";
 import { startWaitlistSweeper } from "./services/waitlist.js";
 
@@ -50,6 +51,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/waitlist", waitlistRoutes);
 app.use("/api/pro/availability", proAvailabilityRoutes);
 app.use("/api/pro/settings", proSettingsRoutes);
+app.use("/api/pro/stats", proStatsRoutes);
 app.use("/api/pro", proRoutes);
 
 app.use((_req, res) => {
