@@ -40,12 +40,11 @@ export default function Header() {
           {loading ? null : user ? (
             <>
               {isProfessional ? (
-                <Link
-                  to="/pro"
-                  className="hidden sm:inline-flex text-sm font-semibold text-brand hover:underline"
-                >
-                  Espace pro
-                </Link>
+                <div className="hidden sm:flex items-center gap-3 text-sm font-semibold text-brand">
+                  <Link to="/pro" className="hover:underline">Espace pro</Link>
+                  <Link to="/pro/agenda" className="hidden xl:inline hover:underline">Agenda</Link>
+                  <Link to="/pro/disponibilites" className="hidden xl:inline hover:underline">Créneaux</Link>
+                </div>
               ) : null}
 
               <Link
@@ -55,7 +54,7 @@ export default function Header() {
                 Mon compte
               </Link>
 
-              <div className="hidden xl:block text-sm text-muted max-w-[180px] truncate">
+              <div className="hidden 2xl:block text-sm text-muted max-w-[180px] truncate">
                 {user.fullName ? user.fullName : user.email}
               </div>
 
