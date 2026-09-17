@@ -8,9 +8,11 @@ import Conseils from "./pages/Conseils.jsx";
 import ConseilArticle from "./pages/ConseilArticle.jsx";
 import Account from "./pages/Account.jsx";
 import WaitlistNew from "./pages/WaitlistNew.jsx";
+import ProDashboard from "./pages/ProDashboard.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import PrivateRoute from "./auth/PrivateRoute.jsx";
+import ProRoute from "./auth/ProRoute.jsx";
 
 export default function App() {
   return (
@@ -36,6 +38,14 @@ export default function App() {
             <PrivateRoute>
               <WaitlistNew />
             </PrivateRoute>
+          }
+        />
+        <Route
+          path="/pro"
+          element={
+            <ProRoute>
+              <ProDashboard />
+            </ProRoute>
           }
         />
         <Route path="/login" element={<Login />} />
