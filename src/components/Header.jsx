@@ -19,7 +19,7 @@ export default function Header() {
           <Link to="/search?species=nac" className="hover:text-text">NAC</Link>
           <Link to="/search?species=ferme" className="hover:text-text">Ferme</Link>
           <Link to="/search?urgent=1" className="hover:text-text">Urgences</Link>
-          <span className="hover:text-text cursor-pointer">Conseils</span>
+          <Link to="/conseils" className="hover:text-text">Conseils</Link>
         </div>
 
         <div className="flex-1" />
