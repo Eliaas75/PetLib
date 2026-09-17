@@ -3,9 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "./Button.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 
+const professionalRoles = new Set(["practitioner", "clinic_admin", "admin"]);
+
 export default function Header() {
   const nav = useNavigate();
   const { user, loading, logout } = useAuth();
+  const isProfessional = user && professionalRoles.has(user.role);
 
   return (
     <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-border">
@@ -36,6 +39,15 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {loading ? null : user ? (
             <>
+              {isProfessional ? (
+                <Link
+                  to="/pro"
+                  className="hidden sm:inline-flex text-sm font-semibold text-brand hover:underline"
+                >
+                  Espace pro
+                </Link>
+              ) : null}
+
               <Link
                 to="/account"
                 className="hidden sm:inline-flex text-sm font-medium text-text hover:underline"
@@ -43,7 +55,7 @@ export default function Header() {
                 Mon compte
               </Link>
 
-              <div className="hidden sm:block text-sm text-muted max-w-[220px] truncate">
+              <div className="hidden xl:block text-sm text-muted max-w-[180px] truncate">
                 {user.fullName ? user.fullName : user.email}
               </div>
 
