@@ -12,6 +12,7 @@ import ProDashboard from "./pages/ProDashboard.jsx";
 import ProAgenda from "./pages/ProAgenda.jsx";
 import ProAvailability from "./pages/ProAvailability.jsx";
 import ProProfile from "./pages/ProProfile.jsx";
+import ProStats from "./pages/ProStats.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import PrivateRoute from "./auth/PrivateRoute.jsx";
@@ -72,6 +73,14 @@ export default function App() {
           element={
             <ProRoute>
               <ProProfile />
+            </ProRoute>
+          }
+        />
+        <Route
+          path="/pro/statistiques"
+          element={
+            <ProRoute>
+              <ProStats />
             </ProRoute>
           }
         />
