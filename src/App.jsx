@@ -9,6 +9,8 @@ import ConseilArticle from "./pages/ConseilArticle.jsx";
 import Account from "./pages/Account.jsx";
 import WaitlistNew from "./pages/WaitlistNew.jsx";
 import ProDashboard from "./pages/ProDashboard.jsx";
+import ProAgenda from "./pages/ProAgenda.jsx";
+import ProAvailability from "./pages/ProAvailability.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import PrivateRoute from "./auth/PrivateRoute.jsx";
@@ -45,6 +47,22 @@ export default function App() {
           element={
             <ProRoute>
               <ProDashboard />
+            </ProRoute>
+          }
+        />
+        <Route
+          path="/pro/agenda"
+          element={
+            <ProRoute>
+              <ProAgenda />
+            </ProRoute>
+          }
+        />
+        <Route
+          path="/pro/disponibilites"
+          element={
+            <ProRoute>
+              <ProAvailability />
             </ProRoute>
           }
         />
