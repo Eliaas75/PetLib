@@ -80,6 +80,7 @@ export default function ProAvailability() {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const [context, setContext] = useState(null);
+  const [teamClinics, setTeamClinics] = useState([]);
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,6 +89,7 @@ export default function ProAvailability() {
   const [success, setSuccess] = useState("");
   const [form, setForm] = useState({
     clinicId: "",
+    practitionerId: "",
     date: dateInputValue(tomorrow),
     startTime: "09:00",
     endTime: "12:00",
@@ -104,8 +106,21 @@ export default function ProAvailability() {
       const clinic = membership.clinicId;
       if (clinic?._id) found.set(String(clinic._id), clinic);
     }
+    for (const clinic of teamClinics) found.set(String(clinic._id), clinic);
     return [...found.values()];
-  }, [context]);
+  }, [context, teamClinics]);
+
+  const selectedTeamClinic = useMemo(
+    () => teamClinics.find((clinic) => String(clinic._id) === String(form.clinicId)),
+    [teamClinics, form.clinicId]
+  );
+
+  const selectablePractitioners = useMemo(() => {
+    if (user?.role === "practitioner") {
+      return context?.practitioner ? [context.practitioner] : [];
+    }
+    return selectedTeamClinic?.practitioners || [];
+  }, [user, context, selectedTeamClinic]);
 
   const previewSlots = useMemo(() => {
     const duration = Number(form.durationMinutes);
@@ -119,15 +134,34 @@ export default function ProAvailability() {
     try {
       const proContext = await api("/api/pro/me");
       setContext(proContext);
+
       const from = new Date().toISOString();
       const to = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      const availability = await api(`/api/pro/availability?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      const [availability, team] = await Promise.all([
+        api(`/api/pro/availability?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+        api("/api/pro/team"),
+      ]);
+
+      const nextTeamClinics = team.clinics || [];
+      setTeamClinics(nextTeamClinics);
       setSlots(availability.slots || []);
 
       const practitioner = proContext.practitioner;
+      const defaultClinicId =
+        practitioner?.clinicIds?.[0]?._id ||
+        proContext.memberships?.[0]?.clinicId?._id ||
+        nextTeamClinics[0]?._id ||
+        "";
+      const selectedClinic = nextTeamClinics.find((clinic) => String(clinic._id) === String(defaultClinicId));
+      const defaultPractitionerId =
+        user?.role === "practitioner"
+          ? practitioner?._id || ""
+          : selectedClinic?.practitioners?.[0]?._id || "";
+
       setForm((current) => ({
         ...current,
-        clinicId: current.clinicId || practitioner?.clinicIds?.[0]?._id || proContext.memberships?.[0]?.clinicId?._id || "",
+        clinicId: current.clinicId || defaultClinicId,
+        practitionerId: current.practitionerId || defaultPractitionerId,
         consultationType: practitioner?.consultationTypes?.[0] || current.consultationType,
         acceptedSpecies: current.acceptedSpecies.length ? current.acceptedSpecies : practitioner?.acceptedSpecies || [],
       }));
@@ -142,6 +176,15 @@ export default function ProAvailability() {
     loadData();
   }, []);
 
+  function changeClinic(clinicId) {
+    const clinic = teamClinics.find((item) => String(item._id) === String(clinicId));
+    const practitionerId =
+      user?.role === "practitioner"
+        ? context?.practitioner?._id || ""
+        : clinic?.practitioners?.[0]?._id || "";
+    setForm((current) => ({ ...current, clinicId, practitionerId }));
+  }
+
   async function createSlots(e) {
     e.preventDefault();
     setSaving(true);
@@ -149,12 +192,14 @@ export default function ProAvailability() {
     setSuccess("");
     try {
       if (!form.clinicId) throw new Error("Ajoute d’abord une structure à ton espace professionnel");
+      if (!form.practitionerId) throw new Error("Sélectionne un praticien pour cette plage");
       if (!previewSlots.length) throw new Error("La plage horaire ne permet de créer aucun créneau");
 
       const data = await api("/api/pro/availability/bulk", {
         method: "POST",
         body: JSON.stringify({
           clinicId: form.clinicId,
+          practitionerId: form.practitionerId,
           consultationType: form.consultationType,
           acceptedSpecies: form.acceptedSpecies,
           allowedReasons: form.reasons.split(",").map((value) => value.trim()).filter(Boolean),
@@ -185,6 +230,8 @@ export default function ProAvailability() {
     }
   }
 
+  const canCreate = clinics.length > 0 && selectablePractitioners.length > 0;
+
   return (
     <div className="max-w-[1200px] mx-auto px-6 lg:px-20 py-8">
       <ProNav />
@@ -192,7 +239,7 @@ export default function ProAvailability() {
       <div className="mt-6">
         <Tag>Disponibilités</Tag>
         <h1 className="mt-3 text-3xl font-semibold">Gérer les créneaux ouverts à la réservation</h1>
-        <p className="mt-1 text-muted">Crée des plages en série, bloque un créneau libre ou rouvre-le sans toucher aux rendez-vous déjà réservés.</p>
+        <p className="mt-1 text-muted">Crée des plages en série, assigne-les au bon praticien, bloque un créneau libre ou rouvre-le.</p>
       </div>
 
       {error ? <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
@@ -203,17 +250,35 @@ export default function ProAvailability() {
           <h2 className="text-lg font-semibold">Créer une plage</h2>
           <p className="mt-1 text-sm text-muted">PetLib découpe automatiquement la plage selon la durée choisie.</p>
 
-          {user?.role !== "practitioner" ? (
-            <div className="mt-4 rounded-xl border border-border bg-black/2 p-4 text-sm text-muted">
-              La création multi-praticiens depuis un compte administrateur de clinique sera ajoutée avec la gestion d’équipe. Cette vue reste consultable.
-            </div>
-          ) : clinics.length ? (
+          {canCreate ? (
             <form className="mt-5 space-y-4" onSubmit={createSlots}>
               <div>
                 <label className="text-sm font-medium">Structure</label>
-                <select className="mt-1 w-full rounded-xl border border-border px-3 py-2" value={form.clinicId} onChange={(e) => setForm({ ...form, clinicId: e.target.value })}>
+                <select className="mt-1 w-full rounded-xl border border-border px-3 py-2" value={form.clinicId} onChange={(e) => changeClinic(e.target.value)}>
                   {clinics.map((clinic) => <option key={clinic._id} value={clinic._id}>{clinic.name}</option>)}
                 </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Praticien</label>
+                {user?.role === "practitioner" ? (
+                  <div className="mt-1 rounded-xl border border-border bg-black/2 px-3 py-2 text-sm">
+                    {context?.practitioner?.displayName || "Profil praticien"}
+                  </div>
+                ) : (
+                  <select
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                    value={form.practitionerId}
+                    onChange={(e) => setForm({ ...form, practitionerId: e.target.value })}
+                    required
+                  >
+                    {selectablePractitioners.map((practitioner) => (
+                      <option key={practitioner._id} value={practitioner._id}>
+                        {practitioner.displayName} · {practitioner.title || "Vétérinaire"}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -272,7 +337,7 @@ export default function ProAvailability() {
             </form>
           ) : (
             <div className="mt-4 text-sm text-muted">
-              Aucune structure n’est rattachée à ton profil. <Link to="/pro" className="font-medium text-brand hover:underline">Retourne au tableau de bord pour en ajouter une.</Link>
+              Il manque une structure ou un praticien rattaché. <Link to="/pro/equipe" className="font-medium text-brand hover:underline">Vérifie l’équipe de la clinique.</Link>
             </div>
           )}
         </Card>
@@ -291,7 +356,10 @@ export default function ProAvailability() {
               <div key={slot._id} className="rounded-xl border border-border p-4 flex items-center justify-between gap-4">
                 <div>
                   <div className="font-medium">{formatDateTime(slot.startsAt)}</div>
-                  <div className="mt-1 text-sm text-muted">{slot.clinicId?.name || "Structure"} · {slot.consultationType} · {slotStatus(slot.status)}</div>
+                  <div className="mt-1 text-sm text-muted">
+                    {slot.practitionerId?.displayName || "Praticien"} · {slot.clinicId?.name || "Structure"}
+                  </div>
+                  <div className="mt-1 text-sm text-muted">{slot.consultationType} · {slotStatus(slot.status)}</div>
                   {slot.acceptedSpecies?.length ? <div className="mt-1 text-xs text-muted">{slot.acceptedSpecies.join(", ")}</div> : null}
                 </div>
                 <div>
