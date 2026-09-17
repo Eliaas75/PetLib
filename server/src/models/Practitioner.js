@@ -5,7 +5,7 @@ const consultationTypeValues = ["clinic", "tele", "home", "farm"];
 
 const PractitionerSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true, unique: true, sparse: true },
     clinicIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic", index: true }],
     displayName: { type: String, required: true, trim: true, index: true },
     title: { type: String, default: "Vétérinaire", trim: true },
