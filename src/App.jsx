@@ -5,6 +5,7 @@ import Home from "./pages/Home.jsx";
 import SearchResults from "./pages/SearchResults.jsx";
 import Profile from "./pages/Profile.jsx";
 import Conseils from "./pages/Conseils.jsx";
+import ConseilArticle from "./pages/ConseilArticle.jsx";
 import Account from "./pages/Account.jsx";
 import WaitlistNew from "./pages/WaitlistNew.jsx";
 import Login from "./pages/Login.jsx";
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/p/:id" element={<Profile />} />
         <Route path="/conseils" element={<Conseils />} />
+        <Route path="/conseils/:id" element={<ConseilArticle />} />
         <Route
           path="/account"
           element={
