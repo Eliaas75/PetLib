@@ -6,6 +6,7 @@ const items = [
   ["/pro/agenda", "Agenda", false],
   ["/pro/disponibilites", "Disponibilités", false],
   ["/pro/profil", "Profil", false],
+  ["/pro/statistiques", "Statistiques", false],
 ];
 
 export default function ProNav() {
