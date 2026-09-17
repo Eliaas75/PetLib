@@ -62,7 +62,7 @@ router.post("/bulk", async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(clinicId)) return res.status(400).json({ error: "Structure invalide" });
 
     const practitionerClinicIds = (practitioner.clinicIds || []).map(String);
-    if (ctx.role !== "admin" && !practitionerClinicIds.includes(String(clinicId))) {
+    if (!practitionerClinicIds.includes(String(clinicId))) {
       return res.status(403).json({ error: "Cette structure n’est pas rattachée au praticien" });
     }
     if (ctx.role === "clinic_admin" && !ctx.clinicIds.includes(String(clinicId))) {
