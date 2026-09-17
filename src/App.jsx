@@ -11,6 +11,7 @@ import WaitlistNew from "./pages/WaitlistNew.jsx";
 import ProDashboard from "./pages/ProDashboard.jsx";
 import ProAgenda from "./pages/ProAgenda.jsx";
 import ProAvailability from "./pages/ProAvailability.jsx";
+import ProProfile from "./pages/ProProfile.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import PrivateRoute from "./auth/PrivateRoute.jsx";
@@ -63,6 +64,14 @@ export default function App() {
           element={
             <ProRoute>
               <ProAvailability />
+            </ProRoute>
+          }
+        />
+        <Route
+          path="/pro/profil"
+          element={
+            <ProRoute>
+              <ProProfile />
             </ProRoute>
           }
         />

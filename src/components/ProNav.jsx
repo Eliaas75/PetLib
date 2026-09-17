@@ -5,6 +5,7 @@ const items = [
   ["/pro", "Tableau de bord", true],
   ["/pro/agenda", "Agenda", false],
   ["/pro/disponibilites", "Disponibilités", false],
+  ["/pro/profil", "Profil", false],
 ];
 
 export default function ProNav() {
