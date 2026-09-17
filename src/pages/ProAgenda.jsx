@@ -99,6 +99,33 @@ export default function ProAgenda() {
     }
   }
 
+  async function cancelAppointment(appointment) {
+    const confirmed = window.confirm(
+      "Annuler ce rendez-vous ? Le créneau sera immédiatement remis à disposition et pourra être proposé à la Smart Waitlist."
+    );
+    if (!confirmed) return;
+
+    setMutatingId(appointment._id);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await api(`/api/pro/appointments/${appointment._id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ reason: "Annulé depuis l’agenda professionnel" }),
+      });
+      setSuccess(
+        data.slotReleased
+          ? "Rendez-vous annulé. Le créneau est de nouveau disponible et la Smart Waitlist a été relancée."
+          : "Rendez-vous annulé."
+      );
+      await loadAppointments();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setMutatingId("");
+    }
+  }
+
   return (
     <div className="max-w-[1200px] mx-auto px-6 lg:px-20 py-8">
       <ProNav />
@@ -201,7 +228,17 @@ export default function ProAgenda() {
                             </button>
                           </>
                         ) : (
-                          <span className="self-center text-xs text-muted">Clôture disponible après le début du rendez-vous.</span>
+                          <>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => cancelAppointment(appointment)}
+                              className="rounded-xl border border-red-200 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              Annuler le rendez-vous
+                            </button>
+                            <span className="self-center text-xs text-muted">La clôture sera disponible après le début du rendez-vous.</span>
+                          </>
                         )}
                       </div>
                     ) : null}
