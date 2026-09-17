@@ -27,6 +27,7 @@ export default function ProRoute({ children }) {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-20 pt-6 flex flex-wrap gap-2">
           <Link to="/pro/agenda" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Ouvrir l’agenda</Link>
           <Link to="/pro/disponibilites" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Gérer les disponibilités</Link>
+          <Link to="/pro/profil" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-black/2">Modifier le profil</Link>
         </div>
       ) : null}
       {children}
