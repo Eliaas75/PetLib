@@ -19,8 +19,8 @@ export default function Register() {
     e.preventDefault();
     setErr("");
     try {
-      await register({ fullName, email, role, password });
-      nav("/");
+      const createdUser = await register({ fullName, email, role, password });
+      nav(createdUser?.role === "practitioner" ? "/pro" : "/");
     } catch (e) {
       setErr(e.message);
     }
@@ -39,6 +39,11 @@ export default function Register() {
             <option value="owner">Propriétaire</option>
             <option value="practitioner">Praticien</option>
           </Select>
+          {role === "practitioner" ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              Le compte professionnel sera créé immédiatement, mais le profil restera non vérifié jusqu’au contrôle PetLib.
+            </div>
+          ) : null}
           <Input label="Mot de passe (8+)" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
           {err ? <div className="text-sm text-red-600">{err}</div> : null}
