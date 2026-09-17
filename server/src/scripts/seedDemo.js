@@ -18,6 +18,12 @@ if (process.env.NODE_ENV === "production") {
 
 await connectDB(process.env.MONGO_URI);
 
+// Older local databases may still contain the previous compound multikey
+// indexes on acceptedSpecies + consultationTypes. MongoDB cannot index two
+// array fields in one compound index. Sync the corrected model indexes before
+// inserting demo documents so rerunning the seed also repairs local databases.
+await Promise.all([Clinic.syncIndexes(), Practitioner.syncIndexes()]);
+
 const demoEmails = [
   "demo.clinique@petlib.local",
   "demo.veto@petlib.local",
@@ -225,7 +231,7 @@ const ownerPet = await Pet.create({
   breed: "Labrador",
   sex: "female",
   weightKg: 24,
-  allergies: "Aucune connue",
+  allergies: ["Aucune connue"],
   notes: "Animal fictif réservé aux tests PetLib.",
 });
 

@@ -63,6 +63,8 @@ const ClinicSchema = new mongoose.Schema(
 
 ClinicSchema.index({ location: "2dsphere" }, { sparse: true });
 ClinicSchema.index({ "address.city": 1, active: 1, verified: 1 });
-ClinicSchema.index({ acceptedSpecies: 1, consultationTypes: 1, active: 1 });
+// MongoDB does not allow a compound multikey index across two array fields.
+ClinicSchema.index({ acceptedSpecies: 1, active: 1 });
+ClinicSchema.index({ consultationTypes: 1, active: 1 });
 
 export const Clinic = mongoose.model("Clinic", ClinicSchema);

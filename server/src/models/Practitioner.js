@@ -33,7 +33,10 @@ const PractitionerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-PractitionerSchema.index({ acceptedSpecies: 1, consultationTypes: 1, active: 1 });
+// MongoDB cannot build a compound multikey index when more than one indexed
+// field is an array. Keep species and consultation-type indexes independent.
+PractitionerSchema.index({ acceptedSpecies: 1, active: 1 });
+PractitionerSchema.index({ consultationTypes: 1, active: 1 });
 PractitionerSchema.index({ clinicIds: 1, active: 1 });
 
 export const Practitioner = mongoose.model("Practitioner", PractitionerSchema);
