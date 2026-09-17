@@ -13,6 +13,7 @@ import ProAgenda from "./pages/ProAgenda.jsx";
 import ProAvailability from "./pages/ProAvailability.jsx";
 import ProProfile from "./pages/ProProfile.jsx";
 import ProStats from "./pages/ProStats.jsx";
+import ProTeam from "./pages/ProTeam.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import PrivateRoute from "./auth/PrivateRoute.jsx";
@@ -65,6 +66,14 @@ export default function App() {
           element={
             <ProRoute>
               <ProAvailability />
+            </ProRoute>
+          }
+        />
+        <Route
+          path="/pro/equipe"
+          element={
+            <ProRoute>
+              <ProTeam />
             </ProRoute>
           }
         />

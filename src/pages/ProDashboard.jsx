@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import Card from "../components/Card.jsx";
 import Button from "../components/Button.jsx";
 import Tag from "../components/Tag.jsx";
+import ProNav from "../components/ProNav.jsx";
 
 const speciesOptions = [
   ["dog", "Chien"],
@@ -223,7 +225,9 @@ export default function ProDashboard() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 lg:px-20 py-8">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <ProNav />
+
+      <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <Tag>Espace professionnel</Tag>
           <h1 className="mt-3 text-3xl font-semibold">Bonjour {dashboard?.practitioner?.displayName || user?.fullName || "professionnel"}</h1>
@@ -259,6 +263,7 @@ export default function ProDashboard() {
               <h2 className="text-lg font-semibold">Prochains rendez-vous</h2>
               <p className="text-sm text-muted">Les 5 prochains rendez-vous confirmés ou en attente.</p>
             </div>
+            <Link to="/pro/agenda" className="text-sm font-medium text-brand hover:underline">Voir l’agenda</Link>
           </div>
 
           <div className="mt-4 space-y-3">
@@ -266,7 +271,11 @@ export default function ProDashboard() {
               <div key={appointment._id} className="rounded-xl border border-border p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <div className="font-medium">{appointment.petId?.name || "Animal"} · {appointment.reason}</div>
-                  <div className="text-sm text-muted">{appointment.petId?.species || "Espèce non précisée"} · {appointment.clinicId?.name || "Structure"}</div>
+                  <div className="text-sm text-muted">
+                    {appointment.petId?.species || "Espèce non précisée"}
+                    {appointment.practitionerId?.displayName ? ` · ${appointment.practitionerId.displayName}` : ""}
+                    {appointment.clinicId?.name ? ` · ${appointment.clinicId.name}` : ""}
+                  </div>
                   {appointment.source === "waitlist" ? <div className="mt-1 text-xs font-medium text-brand">Créneau récupéré via Smart Waitlist</div> : null}
                 </div>
                 <div className="text-sm font-medium">{formatDateTime(appointment.startsAt)}</div>
@@ -279,7 +288,10 @@ export default function ProDashboard() {
 
         <div className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold">Structure(s)</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Structure(s)</h2>
+              <Link to="/pro/equipe" className="text-sm font-medium text-brand hover:underline">Équipe</Link>
+            </div>
             <div className="mt-3 space-y-2">
               {clinics.length ? clinics.map((clinic) => (
                 <div key={clinic._id} className="rounded-xl border border-border p-3">
@@ -311,11 +323,13 @@ export default function ProDashboard() {
 
       <Card className="mt-6 p-6">
         <h2 className="text-lg font-semibold">Gestion professionnelle</h2>
-        <p className="mt-1 text-sm text-muted">L’agenda, la création de créneaux et l’édition complète du profil arrivent dans la prochaine étape.</p>
+        <p className="mt-1 text-sm text-muted">Tous les outils principaux du MVP professionnel sont maintenant accessibles depuis cet espace.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" disabled className="rounded-xl border border-border px-4 py-2 text-sm text-muted">Agenda</button>
-          <button type="button" disabled className="rounded-xl border border-border px-4 py-2 text-sm text-muted">Disponibilités</button>
-          <button type="button" disabled className="rounded-xl border border-border px-4 py-2 text-sm text-muted">Profil professionnel</button>
+          <Link to="/pro/agenda" className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-black/2">Agenda</Link>
+          <Link to="/pro/disponibilites" className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-black/2">Disponibilités</Link>
+          <Link to="/pro/equipe" className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-black/2">Équipe</Link>
+          <Link to="/pro/profil" className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-black/2">Profil professionnel</Link>
+          <Link to="/pro/statistiques" className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-black/2">Statistiques</Link>
         </div>
       </Card>
     </div>

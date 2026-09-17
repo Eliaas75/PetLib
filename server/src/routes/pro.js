@@ -218,6 +218,7 @@ router.get("/dashboard", async (req, res) => {
       Appointment.find({ ...appointmentScope, startsAt: { $gte: now }, status: activeStatuses })
         .populate("petId", "name species breed subtype")
         .populate("clinicId", "name slug address")
+        .populate("practitionerId", "displayName title")
         .sort({ startsAt: 1 })
         .limit(5)
         .lean(),
@@ -257,6 +258,7 @@ router.get("/appointments", async (req, res) => {
     const appointments = await Appointment.find(filter)
       .populate("petId", "name species breed subtype")
       .populate("clinicId", "name slug address")
+      .populate("practitionerId", "displayName title")
       .populate("slotId", "startsAt endsAt consultationType status")
       .sort({ startsAt: 1 })
       .limit(limit)
@@ -282,6 +284,7 @@ router.get("/availability", async (req, res) => {
 
     const slots = await AvailabilitySlot.find(filter)
       .populate("clinicId", "name slug address")
+      .populate("practitionerId", "displayName title")
       .sort({ startsAt: 1 })
       .limit(500)
       .lean();

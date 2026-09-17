@@ -134,7 +134,7 @@ export default function ProAgenda() {
         <div>
           <Tag>Agenda professionnel</Tag>
           <h1 className="mt-3 text-3xl font-semibold">Rendez-vous de la journée</h1>
-          <p className="mt-1 text-muted">Consulte les patients attendus, confirme les rendez-vous et clôture les consultations terminées.</p>
+          <p className="mt-1 text-muted">Consulte les patients attendus, le praticien assigné, confirme les rendez-vous et clôture les consultations terminées.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -187,6 +187,7 @@ export default function ProAgenda() {
                     <div className="mt-1 text-sm text-muted">
                       {appointment.petId?.species || "Espèce non précisée"}
                       {appointment.petId?.breed ? ` · ${appointment.petId.breed}` : ""}
+                      {appointment.practitionerId?.displayName ? ` · ${appointment.practitionerId.displayName}` : ""}
                       {appointment.clinicId?.name ? ` · ${appointment.clinicId.name}` : ""}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs">
