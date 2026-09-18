@@ -49,8 +49,8 @@ router.get("/:idOrSlug", async (req, res) => {
   try {
     const key = req.params.idOrSlug;
     const selector = mongoose.Types.ObjectId.isValid(key)
-      ? { _id: key, active: true }
-      : { slug: String(key).toLowerCase(), active: true };
+      ? { _id: key, active: true, verified: true }
+      : { slug: String(key).toLowerCase(), active: true, verified: true };
 
     const clinic = await Clinic.findOne(selector).lean();
     if (!clinic) return res.status(404).json({ error: "Clinique introuvable" });
