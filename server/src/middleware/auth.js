@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import config from "../config.js";
 
 function getToken(req) {
   const cookieToken = req.cookies?.token;
@@ -15,8 +16,7 @@ export function requireAuth(req, res, next) {
   if (!token) return res.status(401).json({ error: "Authentification requise" });
 
   try {
-    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is required");
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, config.jwtSecret);
     req.auth = {
       userId: payload.sub,
       email: payload.email,
