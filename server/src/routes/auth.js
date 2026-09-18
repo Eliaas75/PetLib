@@ -36,7 +36,7 @@ function publicUser(user) {
 
 function signToken(user) {
   return jwt.sign(
-    { sub: user._id.toString(), email: user.email, role: user.role },
+    { sub: user._id.toString() },
     config.jwtSecret,
     { expiresIn: "7d" }
   );
@@ -92,7 +92,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     const user = await User.findOne({ email: normalizedEmail });
-    if (!user) return res.status(401).json({ error: "Identifiants invalides" });
+    if (!user || user.active === false) return res.status(401).json({ error: "Identifiants invalides" });
 
     const valid = await bcrypt.compare(passwordValue, user.passwordHash);
     if (!valid) return res.status(401).json({ error: "Identifiants invalides" });
@@ -117,7 +117,7 @@ router.get("/me", async (req, res) => {
   try {
     const payload = jwt.verify(token, config.jwtSecret);
     const user = await User.findById(payload.sub);
-    return res.json({ user: user ? publicUser(user) : null });
+    return res.json({ user: user && user.active !== false ? publicUser(user) : null });
   } catch {
     return res.json({ user: null });
   }
