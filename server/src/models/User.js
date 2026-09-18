@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema(
       default: "owner",
       index: true,
     },
+    active: { type: Boolean, default: true, index: true },
     notificationPreferences: {
       email: { type: Boolean, default: true },
       push: { type: Boolean, default: true },
