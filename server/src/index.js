@@ -20,6 +20,7 @@ import proAppointmentRoutes from "./routes/proAppointments.js";
 import proTeamRoutes from "./routes/proTeam.js";
 import proRoutes from "./routes/pro.js";
 import { startWaitlistSweeper } from "./services/waitlist.js";
+import { requireTrustedOrigin } from "./middleware/security.js";
 
 validateConfig();
 
@@ -52,6 +53,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+app.use(requireTrustedOrigin);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "petlib-api" });
