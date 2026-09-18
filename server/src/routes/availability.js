@@ -1,6 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
+import { Clinic } from "../models/Clinic.js";
+import { Practitioner } from "../models/Practitioner.js";
 
 const router = express.Router();
 
@@ -26,26 +28,39 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "La fenêtre maximale est de 31 jours" });
     }
 
-    const filter = {
-      status: "available",
-      startsAt: { $gte: from, $lte: to },
-    };
-
     const { practitionerId, clinicId, species, consultationType, reason } = req.query;
 
+    const practitionerFilter = { active: true, verified: true };
     if (practitionerId) {
       if (!mongoose.Types.ObjectId.isValid(practitionerId)) {
         return res.status(400).json({ error: "Identifiant praticien invalide" });
       }
-      filter.practitionerId = practitionerId;
+      practitionerFilter._id = practitionerId;
     }
 
+    const clinicFilter = { active: true, verified: true };
     if (clinicId) {
       if (!mongoose.Types.ObjectId.isValid(clinicId)) {
         return res.status(400).json({ error: "Identifiant clinique invalide" });
       }
-      filter.clinicId = clinicId;
+      clinicFilter._id = clinicId;
     }
+
+    const [publicPractitioners, publicClinics] = await Promise.all([
+      Practitioner.find(practitionerFilter).select("_id").lean(),
+      Clinic.find(clinicFilter).select("_id").lean(),
+    ]);
+
+    if (!publicPractitioners.length || !publicClinics.length) {
+      return res.json({ from, to, slots: [] });
+    }
+
+    const filter = {
+      status: "available",
+      startsAt: { $gte: from, $lte: to },
+      practitionerId: { $in: publicPractitioners.map((item) => item._id) },
+      clinicId: { $in: publicClinics.map((item) => item._id) },
+    };
 
     if (consultationType) filter.consultationType = consultationType;
     if (species) {
