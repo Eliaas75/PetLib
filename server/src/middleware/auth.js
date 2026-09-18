@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import config from "../config.js";
+import { User } from "../models/User.js";
 
 function getToken(req) {
   const cookieToken = req.cookies?.token;
@@ -11,16 +12,22 @@ function getToken(req) {
   return null;
 }
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const token = getToken(req);
   if (!token) return res.status(401).json({ error: "Authentification requise" });
 
   try {
     const payload = jwt.verify(token, config.jwtSecret);
+    const user = await User.findById(payload.sub).select("email role active").lean();
+
+    if (!user || user.active === false) {
+      return res.status(401).json({ error: "Session invalide ou expirée" });
+    }
+
     req.auth = {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
     };
     return next();
   } catch {
