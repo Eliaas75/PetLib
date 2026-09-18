@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import config, { validateConfig } from "./config.js";
 import { connectDB } from "./db.js";
 import authRoutes from "./routes/auth.js";
 import petRoutes from "./routes/pets.js";
@@ -19,28 +21,40 @@ import proTeamRoutes from "./routes/proTeam.js";
 import proRoutes from "./routes/pro.js";
 import { startWaitlistSweeper } from "./services/waitlist.js";
 
+validateConfig();
+
 const app = express();
-const port = Number(process.env.PORT || 4000);
-const allowedOrigins = String(process.env.CLIENT_ORIGIN || "http://localhost:5173")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
+
+if (config.trustProxy !== false) {
+  app.set("trust proxy", config.trustProxy);
+}
 
 app.disable("x-powered-by");
-app.use(express.json({ limit: "1mb" }));
+app.use(
+  helmet({
+    strictTransportSecurity: config.isProduction
+      ? { maxAge: 31536000, includeSubDomains: true }
+      : false,
+  })
+);
+app.use(express.json({ limit: "256kb" }));
 app.use(cookieParser());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Origin not allowed by CORS"));
+      if (!origin || config.clientOrigins.includes(origin)) return callback(null, true);
+      const error = new Error("Origin not allowed by CORS");
+      error.code = "CORS_ORIGIN_DENIED";
+      return callback(error);
     },
     credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "petlib-api", environment: process.env.NODE_ENV || "development" });
+  res.json({ ok: true, service: "petlib-api" });
 });
 
 app.use("/api/auth", authRoutes);
@@ -63,10 +77,21 @@ app.use((_req, res) => {
 });
 
 app.use((err, _req, res, _next) => {
-  console.error("unhandled_error", err);
-  res.status(500).json({ error: "Erreur serveur" });
+  if (err?.code === "CORS_ORIGIN_DENIED") {
+    return res.status(403).json({ error: "Origine non autorisée" });
+  }
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({ error: "Requête trop volumineuse" });
+  }
+
+  console.error("unhandled_error", {
+    name: err?.name,
+    message: err?.message,
+    stack: config.isProduction ? undefined : err?.stack,
+  });
+  return res.status(500).json({ error: "Erreur serveur" });
 });
 
-await connectDB(process.env.MONGO_URI);
+await connectDB(config.mongoUri);
 startWaitlistSweeper();
-app.listen(port, () => console.log(`PetLib API listening on port ${port}`));
+app.listen(config.port, () => console.log(`PetLib API listening on port ${config.port}`));
