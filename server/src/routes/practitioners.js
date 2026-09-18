@@ -34,7 +34,7 @@ router.get("/:id", async (req, res) => {
   }
 
   try {
-    const practitioner = await Practitioner.findOne({ _id: req.params.id, active: true })
+    const practitioner = await Practitioner.findOne({ _id: req.params.id, active: true, verified: true })
       .populate("clinicIds", "name slug address location phone email website openingHours services equipment consultationTypes acceptedSpecies emergencyCapability homeVisitRadiusKm verified rating reviewsCount")
       .lean();
 
